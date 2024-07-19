@@ -17,12 +17,7 @@ class Common:
 
     def format_messages(self: "Common", messages: Iterable[Message]) -> None:
         message_list = []
-
-        # Collect messages until the last user message
-        for message in messages:
-            message_list.append(message)
-            if message.role == "user":
-                break
+        message_list.extend(message for message in messages if message.role != "user")
 
         # Reverse the list to display the last user message first
         for message in reversed(message_list):
@@ -36,12 +31,17 @@ class Common:
                     image = image.resize((image.width // 2, image.height // 2), Image.LANCZOS)
                     image.show()
 
-    def process_message(self: "Common", instructions: str, content: str) -> None:
+    from typing import Optional
+
+    def process_message(
+        self: "Common",
+        instructions: str,
+        content: str,
+        call_functions: Optional[callable] = None,
+    ) -> None:
         self.client.beta.threads.messages.create(thread_id=self.thread.id, role="user", content=content)
         run = self.client.beta.threads.runs.create(
-            thread_id=self.thread.id,
-            assistant_id=self.assistant.id,
-            instructions=instructions,
+            thread_id=self.thread.id, assistant_id=self.assistant.id, instructions=instructions
         )
         print("processing ...")
 
@@ -59,8 +59,7 @@ class Common:
                     print(run)
                 break
 
-            if run.status == "requires_action":
-                # Handle function calling and continue processing
-                pass
+            if run.status == "requires_action" and call_functions:
+                call_functions(self.client, self.thread, run)
 
-            time.sleep(5)
+            time.sleep(2)
