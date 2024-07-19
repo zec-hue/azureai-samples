@@ -1,4 +1,3 @@
-from datetime import datetime
 import io
 import time
 from PIL import Image
@@ -37,16 +36,12 @@ class Common:
                     image = image.resize((image.width // 2, image.height // 2), Image.LANCZOS)
                     image.show()
 
-    def process_message(self: "Common", content: str) -> None:
+    def process_message(self: "Common", instructions: str, content: str) -> None:
         self.client.beta.threads.messages.create(thread_id=self.thread.id, role="user", content=content)
         run = self.client.beta.threads.runs.create(
             thread_id=self.thread.id,
             assistant_id=self.assistant.id,
-            instructions=(
-                "Please address the user as Jane Doe. The user has a premium account. "
-                "Be assertive, accurate, and polite. Ask if the user has further questions. "
-                f"The current date and time is: {datetime.now().strftime('%x %X')}."
-            ),
+            instructions=instructions,
         )
         print("processing ...")
 
